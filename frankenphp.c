@@ -29,6 +29,25 @@
 #include "_cgo_export.h"
 #include "frankenphp_arginfo.h"
 
+/* PHP 8.0 compatibility macros */
+#if PHP_VERSION_ID < 80100
+/* ZEND_HASH_MAP_FOREACH_PTR was added in PHP 8.1 */
+#define ZEND_HASH_MAP_FOREACH_PTR ZEND_HASH_FOREACH_PTR
+
+/* zend_is_graceful_exit was added in PHP 8.0.14/8.1.1 */
+#ifndef HAVE_ZEND_IS_GRACEFUL_EXIT
+static inline bool zend_is_graceful_exit_compat(zend_object *ex) {
+  return ex->ce == zend_ce_compile_error;
+}
+#define zend_is_graceful_exit(ex) zend_is_graceful_exit_compat(ex)
+#endif
+
+/* PHP_STREAM_FLAG_NO_RSCR_DTOR_CLOSE was added in PHP 8.1 */
+#ifndef PHP_STREAM_FLAG_NO_RSCR_DTOR_CLOSE
+#define PHP_STREAM_FLAG_NO_RSCR_DTOR_CLOSE 0
+#endif
+#endif /* PHP_VERSION_ID < 80100 */
+
 #if defined(PHP_WIN32) && defined(ZTS)
 ZEND_TSRMLS_CACHE_DEFINE()
 #endif
@@ -120,12 +139,22 @@ static void frankenphp_reset_super_globals() {
   zend_end_try();
 
   zend_auto_global *auto_global;
+#if PHP_VERSION_ID >= 80100
   zend_string *_env = ZSTR_KNOWN(ZEND_STR_AUTOGLOBAL_ENV);
   zend_string *_server = ZSTR_KNOWN(ZEND_STR_AUTOGLOBAL_SERVER);
+#endif
   ZEND_HASH_MAP_FOREACH_PTR(CG(auto_globals), auto_global) {
+#if PHP_VERSION_ID >= 80100
     if (auto_global->name == _env) {
+#else
+    if (zend_string_equals_literal(auto_global->name, "_ENV")) {
+#endif
       /* skip $_ENV */
+#if PHP_VERSION_ID >= 80100
     } else if (auto_global->name == _server) {
+#else
+    } else if (zend_string_equals_literal(auto_global->name, "_SERVER")) {
+#endif
       /* always reimport $_SERVER  */
       auto_global->armed = auto_global->auto_global_callback(auto_global->name);
     } else if (auto_global->jit) {
@@ -616,7 +645,12 @@ static void frankenphp_request_shutdown() {
 static int frankenphp_startup(sapi_module_struct *sapi_module) {
   php_import_environment_variables = get_full_env;
 
+#if PHP_VERSION_ID >= 80100
   return php_module_startup(sapi_module, &frankenphp_module);
+#else
+  /* PHP 8.0 requires a third argument for num_additional_modules */
+  return php_module_startup(sapi_module, &frankenphp_module, 1);
+#endif
 }
 
 static int frankenphp_deactivate(void) { return SUCCESS; }
@@ -1072,7 +1106,9 @@ int frankenphp_execute_script(char *file_name) {
   zend_file_handle file_handle;
   zend_stream_init_filename(&file_handle, file_name);
 
+#if PHP_VERSION_ID >= 80100
   file_handle.primary_script = 1;
+#endif
 
   zend_first_try {
     EG(exit_status) = 0;

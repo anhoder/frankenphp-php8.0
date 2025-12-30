@@ -7,7 +7,9 @@ Alternativement, il est aussi possible de [créer des builds statiques](static.m
 
 ## Installer PHP
 
-FrankenPHP est compatible avec PHP 8.2 et versions ultérieures.
+FrankenPHP est compatible avec PHP 8.0 et versions ultérieures.
+
+> **Note** : Lors de l'utilisation de PHP 8.0, les Zend Max Execution Timers ne sont pas disponibles, les délais d'expiration (par exemple, `max_execution_time`) seront automatiquement désactivés. PHP 8.1+ est recommandé pour une fonctionnalité complète.
 
 ### Avec Homebrew (Linux et Mac)
 

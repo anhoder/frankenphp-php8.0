@@ -9,7 +9,9 @@ também podem ser criadas.
 
 ## Instalar o PHP
 
-O FrankenPHP é compatível com PHP 8.2 e versões superiores.
+O FrankenPHP é compatível com PHP 8.0 e versões superiores.
+
+> **Nota**: Ao usar o PHP 8.0, os Zend Max Execution Timers não estão disponíveis, então os tempos limite (por exemplo, `max_execution_time`) serão automaticamente desabilitados. PHP 8.1+ é recomendado para funcionalidade completa.
 
 ### Com o Homebrew (Linux e Mac)
 

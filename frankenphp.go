@@ -44,7 +44,7 @@ type contextKeyStruct struct{}
 var (
 	ErrInvalidRequest     = errors.New("not a FrankenPHP request")
 	ErrAlreadyStarted     = errors.New("FrankenPHP is already started")
-	ErrInvalidPHPVersion  = errors.New("FrankenPHP is only compatible with PHP 8.2+")
+	ErrInvalidPHPVersion  = errors.New("FrankenPHP is only compatible with PHP 8.0+")
 	ErrMainThreadCreation = errors.New("error creating the main thread")
 	ErrScriptExecution    = errors.New("error during PHP script execution")
 	ErrNotRunning         = errors.New("FrankenPHP is not running. For proper configuration visit: https://frankenphp.dev/docs/config/#caddyfile-config")
@@ -286,7 +286,7 @@ func Init(options ...Option) error {
 
 	config := Config()
 
-	if config.Version.MajorVersion < 8 || (config.Version.MajorVersion == 8 && config.Version.MinorVersion < 2) {
+	if config.Version.MajorVersion < 8 {
 		Shutdown()
 		return ErrInvalidPHPVersion
 	}

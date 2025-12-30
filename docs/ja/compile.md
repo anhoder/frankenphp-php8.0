@@ -7,7 +7,9 @@
 
 ## PHPのインストール
 
-FrankenPHPはPHP 8.2以上と互換性があります。
+FrankenPHPはPHP 8.0以上と互換性があります。
+
+> **注意**: PHP 8.0を使用する場合、Zend Max Execution Timersは利用できないため、タイムアウト（例：`max_execution_time`）は自動的に無効になります。完全な機能を利用するにはPHP 8.1+を推奨します。
 
 ### Homebrewを使用する場合（LinuxとMac）
 

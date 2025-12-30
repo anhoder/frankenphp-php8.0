@@ -2,7 +2,12 @@
 
 zval *get_ht_packed_data(HashTable *ht, uint32_t index) {
   if (ht->u.flags & HASH_FLAG_PACKED) {
+#if PHP_VERSION_ID >= 80100
     return &ht->arPacked[index];
+#else
+    /* PHP 8.0: packed arrays use arData, not arPacked */
+    return &ht->arData[index].val;
+#endif
   }
   return NULL;
 }

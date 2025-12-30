@@ -7,7 +7,9 @@ Alternatif olarak, [statik yapılar oluşturma](static.md) da mümkündür.
 
 ## PHP'yi yükleyin
 
-FrankenPHP, PHP 8.2 ve üstü ile uyumludur.
+FrankenPHP, PHP 8.0 ve üstü ile uyumludur.
+
+> **Not**: PHP 8.0 kullanırken, Zend Max Execution Timers mevcut değildir, bu nedenle zaman aşımları (örn. `max_execution_time`) otomatik olarak devre dışı bırakılır. Tam işlevsellik için PHP 8.1+ önerilir.
 
 İlk olarak, [PHP'nin kaynaklarını edinin](https://www.php.net/downloads.php) ve bunları çıkarın:
 

@@ -7,7 +7,9 @@
 
 ## 安装 PHP
 
-FrankenPHP 支持 PHP 8.2 及更高版本。
+FrankenPHP 支持 PHP 8.0 及更高版本。
+
+> **注意**：使用 PHP 8.0 时，Zend Max Execution Timers 不可用，因此超时功能（如 `max_execution_time`）将自动禁用。建议使用 PHP 8.1+ 以获得完整功能。
 
 ### 使用 Homebrew (Linux 和 Mac)
 
