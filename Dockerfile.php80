@@ -1,0 +1,90 @@
+# IMAGE_NAME=anhoder/frankenphp:8.0-alpine GO_VERSION=1.25 PHP_VERSION=8.0 docker buildx bake alpine-only -f docker-bake.hcl --pull --load --set "*.platform=linux/amd64"
+# docker buildx build --platform linux/amd64 -f Dockerfile.php80 --build-arg "BASE_IMAGE_REPO=anhoder/frankenphp:8.0-alpine" --tag anhoder/frankenphp:8.0-alpine-full-ext .
+# docker buildx build --platform linux/amd64 -f Dockerfile.php80-debug --build-arg "BASE_IMAGE_REPO=anhoder/frankenphp:8.0-alpine-full-ext" --tag anhoder/frankenphp:8.0-alpine-full-ext-debug .
+
+# 8.0-alpine-full-ext
+
+ARG BASE_IMAGE_REPO="frankenphp"
+ARG BASE_IMAGE_TAG="8.0-alpine-base"
+
+FROM ${BASE_IMAGE_REPO}:${BASE_IMAGE_TAG}
+
+# Version config for PECL extensions
+ENV APCU_VERSION=5.1.21
+ENV MONGODB_VERSION=1.13.0
+ENV SWOOLE_VERSION=4.8.13
+ENV PROTOBUF_VERSION=3.21.1
+ENV GRPC_VERSION=1.46.3
+
+# php.ini config env
+ENV PHP.opcache.enable=1
+ENV PHP.opcache.enable_cli=0
+ENV PHP.opcache.memory_consumption=512
+ENV PHP.opcache.validate_timestamps=1
+ENV PHP.opcache.revalidate_freq=15
+ENV PHP.opcache.huge_code_pages=0
+ENV PHP.apc.enabled=1
+ENV PHP.apc.shm_size=512M
+ENV PHP.apc.ttl=7200
+ENV PHP.apc.enable_cli=1
+ENV PHP.grpc.enable_fork_support=0
+
+# Install PHP core extensions using docker-php-ext-install
+# Install build deps, compile extensions, then clean up
+RUN set -eux; \
+  sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories; \
+  # Install runtime libraries (these will be kept)
+  apk add --no-cache \
+  postgresql-libs \
+  freetype \
+  libjpeg-turbo \
+  libpng \
+  libwebp \
+  libzip \
+  libffi; \
+  # Install build dependencies (will be removed after compilation)
+  apk add --no-cache --virtual .build-deps \
+  postgresql-dev \
+  freetype-dev \
+  libjpeg-turbo-dev \
+  libpng-dev \
+  libwebp-dev \
+  libzip-dev \
+  libffi-dev; \
+  # Configure gd with freetype and jpeg support
+  docker-php-ext-configure gd \
+  --with-freetype \
+  --with-jpeg \
+  --with-webp; \
+  # Install core extensions
+  docker-php-ext-install -j$(nproc) \
+  opcache \
+  pdo_pgsql \
+  pgsql \
+  pdo_mysql \
+  sockets \
+  gd \
+  pcntl \
+  bcmath \
+  zip \
+  ffi; \
+  # Remove build dependencies
+  apk del --no-network .build-deps
+
+# Install PECL extensions using install-php-extensions (preferred method)
+# This tool is available in official PHP Docker images
+RUN set -eux; \
+  install-php-extensions \
+  # Install APCu
+  apcu-${APCU_VERSION} \
+  # Install MongoDB
+  mongodb-${MONGODB_VERSION} \
+  # Install Swoole with OpenSSL and cURL support
+  swoole-${SWOOLE_VERSION} \
+  # Install Protobuf
+  protobuf-${PROTOBUF_VERSION} \
+  # Install gRPC
+  grpc-${GRPC_VERSION} \
+  # Install Snappy
+  snappy; \
+  php -m &&php --version

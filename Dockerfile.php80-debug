@@ -1,0 +1,81 @@
+# 8.0-alpine-full-ext-debug
+
+ARG BASE_IMAGE_REPO="frankenphp"
+ARG BASE_IMAGE_TAG="8.0-alpine-full-ext"
+
+FROM ${BASE_IMAGE_REPO}:${BASE_IMAGE_TAG}
+
+# Version config for debug extensions
+ENV XDEBUG_VERSION=3.1.6
+# ZTS not supported
+# ENV MEMPROF_VERSION=3.0.2
+
+# Xdebug config env (supports remote debugging in LAN)
+# Mode: debug (step debugging), develop (enhanced error messages), profile (profiling), trace (tracing)
+ENV PHP.xdebug.mode=debug
+# Trigger: yes (always), no (never), trigger (via XDEBUG_TRIGGER cookie/query/header)
+ENV PHP.xdebug.start_with_request=trigger
+# Auto-discover client IP from HTTP headers (X-Forwarded-For, Remote-Addr)
+ENV PHP.xdebug.discover_client_host=1
+# Fallback client host when discover fails (override at runtime: -e PHP.xdebug.client_host=192.168.x.x)
+ENV PHP.xdebug.client_host=host.docker.internal
+ENV PHP.xdebug.client_port=9003
+ENV PHP.xdebug.idekey=PHPSTORM
+ENV PHP.xdebug.log_level=0
+# Max nesting level for stack traces
+ENV PHP.xdebug.max_nesting_level=512
+
+# SPX config env (lightweight profiler with Web UI)
+ENV PHP.spx.http_enabled=1
+ENV PHP.spx.http_key=dev
+ENV PHP.spx.http_ip_whitelist=*
+
+# Install Linux debugging and development tools
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories; \
+  apk add --no-cache \
+  # Process debugging
+  strace \
+  ltrace \
+  # System monitoring
+  htop \
+  procps \
+  # Network debugging
+  tcpdump \
+  net-tools \
+  bind-tools \
+  curl \
+  # File and text utilities
+  vim \
+  less \
+  tree \
+  # GNU core utilities
+  coreutils \
+  findutils \
+  # GDB debugger
+  gdb \
+  # Memory analysis
+  valgrind \
+  tcpflow \
+  perf \
+  iftop \
+  nethogs \
+  glances \
+  # include nsenter ... 
+  util-linux
+
+# Install PHP debug extensions
+RUN set -eux; \
+  # Install Xdebug (PHP 8.0 compatible version)
+  install-php-extensions xdebug-${XDEBUG_VERSION}; \
+  # Install memprof for memory profiling
+  # install-php-extensions memprof-${MEMPROF_VERSION}; \
+  # Install SPX profiler with Web UI
+  install-php-extensions spx; \
+  # Install other useful debug extensions
+  install-php-extensions pcov
+
+# Verify installed debug extensions
+RUN php -m | grep -i xdebug && \
+  # php -m | grep -i memprof && \
+  php -m | grep -i spx && \
+  php --version

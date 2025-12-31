@@ -127,6 +127,46 @@ target "default" {
     secret = ["id=github-token,env=GITHUB_TOKEN"]
 }
 
+target "alpine-only" {
+    name = "${tgt}-php-${replace(php-version, ".", "-")}-${os}"
+    matrix = {
+        os = ["alpine"]
+        php-version = split(",", PHP_VERSION)
+        tgt = ["builder", "runner"]
+    }
+    contexts = {
+        php-base = "docker-image://php:${php-version}-zts-${os}"
+        golang-base = "docker-image://golang:${GO_VERSION}-alpine"
+    }
+    # Use php8_0.alpine.Dockerfile for PHP 8.0, otherwise use alpine.Dockerfile
+    dockerfile = "alpine.Dockerfile"
+    context = "./"
+    target = tgt
+    platforms = [
+        "linux/amd64",
+        "linux/386",
+        "linux/arm/v6",
+        "linux/arm/v7",
+        "linux/arm64",
+    ]
+    tags = distinct(flatten(
+        [for pv in php_version(php-version) : flatten([
+            LATEST ? tag("latest", os, pv, tgt) : [],
+            tag(SHA == "" || VERSION != "dev" ? "" : "sha-${substr(SHA, 0, 7)}", os, pv, tgt),
+            VERSION == "dev" ? [] : [for v in semver(VERSION) : tag(v, os, pv, tgt)]
+        ])
+    ]))
+    labels = {
+        "org.opencontainers.image.created" = "${timestamp()}"
+        "org.opencontainers.image.version" = VERSION
+        "org.opencontainers.image.revision" = SHA
+    }
+    args = {
+        FRANKENPHP_VERSION = VERSION
+    }
+    secret = ["id=github-token,env=GITHUB_TOKEN"]
+}
+
 target "static-builder-musl" {
     contexts = {
         golang-base = "docker-image://golang:${GO_VERSION}-alpine"
